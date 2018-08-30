@@ -1,0 +1,234 @@
+安装composer
+composer相关其下的资源包https://packagist.org/explore/
+
+laravel安装 
+参考https://blog.csdn.net/sun_96216/article/details/81326952
+
+在程序目录下执行Composer安装laravel项目命令：
+composer create-project laravel/laravel xxxxx
+
+配置数据库
+1) config/database.php
+2) .env
+使用Migration
+
+一.创建模型实例 
+DOS: php artisan make:model Xxxx
+顺便生成一个数据库迁移可以在结尾处加 -m
+
+以下是模型内部定义
+
+生成的模型若不定义数据表名,则默认小写模型名称
+protected $table = 'my_flights';
+
+同理也可定义主键id
+protected $primaryKey = 'id';//主键在默认情况下将自动被强制转换为 int;若想使用非递增或者非数字的主键,必须在模型 public $incrementing 属性设置为false
+
+时间戳
+默认情况下数据库表有created_at和updated_at 字段.如不希望让Eloquent自动维护,可在模型内将$timestamps属性设置:
+public $timestamps = false;
+
+如自定义时间戳格式,可在模型内设置$dateFormat.这个决定了日期应如何在数据库中存储,及当模型被序列化成数组或JSON 格式
+protected $dateFormat = 'U';
+
+默认情况下所有的Eloquent模型会使用应用程序中默认的数据库连接设置.如想为模型指定不同的连接：
+protected $connection = 'connection-name';
+
+二.创建控制器实例 
+php artisan make:controller Xxxxx 
+
+翻页
+前面是执行的数据查询->paginate(3);
+
+三.数据库相关操作
+https://laravel-china.org/docs/laravel/5.4/database/1258#configuration
+https://laravel-china.org/docs/laravel/5.4/queries/1259
+
+多条/单条/联合查询/添加/更新/删除
+
+四.配置路由访问地址
+roubtes/web.php
+Route::get('/','Xxxx@index');
+
+1)前后端分离主要修改文件\app\Providers\RouteServiceProvider.php
+
+
+    /**
+     * Define the routes for the application.
+     *
+     * @return void
+     */
+    public function map()
+    {
+        $this->mapApiRoutes();
+
+        $this->mapWebRoutes();
+
+        $this->mapAdminRoutes();//后端
+
+        $this->mapHomeRoutes();//前端
+
+     }
+
+增加方法
+
+    /**
+     * 管理后台
+     */
+    protected function mapAdminRoutes()
+    {
+        Route::middleware('web')
+            ->namespace($this->adminNamespace)
+            ->group(base_path('routes/admin.php'));
+    }
+
+    /**
+     * PC端
+     */
+    protected function mapHomeRoutes()
+    {
+        Route::middleware('web')
+            ->namespace($this->homeNamespace)
+            ->group(base_path('routes/home.php'));
+    }
+
+2)routes下增加
+
+Admin.php 
+Route::get('/admin', 'Admin@index');
+
+Index.php 
+Route::get('/', 'Home@index');
+
+3)app\Http\Controllers增加控制器文件...略
+
+4)在路由中传递数组数据/读取数据表内容/模版输出
+Route::get('del/{id?}', 'Home@del');//问号的意思是这个参数也可以没有
+
+
+五.VIEWS模版显示数据
+引用公用模版 @extends('xxxxx')
+输出数据
+
+{{ $xxx }}自动使用php中的htmlspecialchars方法来转义成实体
+{!! $xxx !!}显示未转义数据
+
+截取字符串
+str_limit($xxxx,250,'...');
+
+引用的CSS/JS文件 路径让人不理解
+<link rel="stylesheet" href="{{ URL::asset('css/style.css') }}" />
+<script type="text/javascript" src="{{ URL::asset('js/jquery.min.js') }}"></script>
+
+翻页输出
+{{$xxxx->render()}}
+
+
+大致思路
+在routes.php中注册路由 ---> 2. 创建对于的控制器 ---> 3. 在控制器中得对于方法加载视图
+
+
+
+
+其它.清理缓存重启服务 
+命令行DOS下
+php artisan view:clear 
+php artisan cache:clear
+php artisan config:clear
+php artisan serve
+
+需要新增组件时在对应的项目根目录
+修改composer.json
+执行composer update
+
+
+Laravel5-KindEditor 是基于 KindEditor 封装的 Markdown 在线HTMl编辑器，支持 Laravel5 项目。已集成本地、七牛云、阿里云文件存储。
+
+1、安装的两种方式
+① 直接编辑配置文件
+将以下内容增加到 composer.json：
+require: {
+    "chenhua/laravel5-kindeditor": "~1.0"
+}
+然后运行 composer update。
+
+② 执行命令安装
+composer require chenhua/laravel5-kindeditor
+
+2、完成上面的操作后，修改 config/app.php 中 providers 数组
+Chenhua\Kindeditor\KindeditorServiceProvider::class,
+
+3、执行 artisan 命令，生成 config/kindeditor.php 配置文件
+php artisan vendor:publish --tag=kindeditor
+
+4、修改 config/kindeditor.php 配置文件
+<?php
+return [
+    "default"     => 'local', //默认返回存储位置url
+    "dirver"      => ['local'], //存储平台 ['local', 'qiniu', 'aliyun']
+    "connections" => [
+        "local"  => [
+            'prefix' => 'uploads/kindeditor', //本地存储位置，默认uploads
+        ],
+        "qiniu"  => [
+            'access_key' => '',
+            'secret_key' => '',
+            'bucket'     => '',
+            'prefix'     => '', //文件前缀 file/of/path
+            'domain'     => '' //七牛自定义域名
+        ],
+        "aliyun" => [
+            'ak_id'     => '',
+            'ak_secret' => '',
+            'end_point'  => '',
+            'bucket'    => '',
+            'prefix'    => '',
+        ],
+    ],
+];
+七牛和阿里云的配置内容，需要去对应官网申请账号并配置获取
+
+4.使用方法
+在 xxx.blade.php 编辑器相应位置添加如下代码：
+<textarea id="editor_id" name="content" style="width:700px;height:300px;">
+    HTML内容
+</textarea>
+
+@include('kindeditor::editor',['editor'=>'editor_id']) ---- 还是用原生的吧
+以上操作能生成一个 id="editor" 的 HTML 文本编辑框，并能实时预览效果.
+
+http://kindeditor.net/doc.php
+
+5.掌握SESSION存储查询删除
+在构造方法中使用SESSION
+public function __construct(){
+    $this->middleware(function ($request, $next) {
+        //用这样方式获取SESSION中用户
+        $this->member = $request->session()->get('member');
+        return $next($request);
+    });
+
+}
+
+注意
+1.Model与Controller 中使用的文件不可以相同,如Models\Users.php与Controller\Users.php引用时会发生不知名的错误
+
+2.提交表单时需要加
+<input type="hidden" name="_token" value="{{ csrf_token() }}" />
+
+3.输出SQL:模型->toSql();
+
+参考学习网站
+
+https://laravel-china.org/
+
+https://docs.golaravel.com/docs/4.2/quick/ 快速入门
+
+https://laravel-china.org/docs/laravel/5.4
+
+http://www.cnblogs.com/grimm/p/5423096.html
+
+案例
+http://laravelacademy.org/laravel-project
+
+https://github.com/slimkit/plus
